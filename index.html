@@ -1,0 +1,1970 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Discipline Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --surface3: #22222f;
+    --border: #2a2a3a;
+    --accent: #6ee7b7;
+    --accent2: #818cf8;
+    --accent3: #f472b6;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #475569;
+    --gold: #fbbf24;
+    --red: #f87171;
+    --green: #6ee7b7;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --sidebar-w: 260px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    overflow-x: hidden;
+  }
+
+  /* ===== SIDEBAR OVERLAY (mobile) ===== */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 90;
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .sidebar-overlay.show { opacity: 1; }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar {
+    width: var(--sidebar-w);
+    min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    overflow-y: auto;
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .sidebar-logo {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo-group {}
+
+  .logo-text {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+    letter-spacing: 1px;
+  }
+
+  /* Close button (mobile only) */
+  .sidebar-close {
+    display: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    width: 32px; height: 32px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 18px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .sidebar-close:hover { background: var(--surface3); color: var(--text); }
+
+  .nav-section {
+    padding: 16px 12px 8px;
+  }
+
+  .nav-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 0 8px;
+    margin-bottom: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 14px;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    user-select: none;
+    position: relative;
+  }
+
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--surface2); color: var(--accent); border-color: var(--border); }
+
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  /* Notification badge */
+  .nav-badge {
+    margin-left: auto;
+    background: var(--accent3);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* Quick calendar shortcut in nav */
+  .nav-item-cal-shortcut {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .sidebar-calendar {
+    padding: 16px 12px;
+    border-top: 1px solid var(--border);
+    margin-top: auto;
+  }
+
+  .mini-cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .mini-cal-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .mini-cal-nav {
+    background: none;
+    border: none;
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.15s;
+  }
+  .mini-cal-nav:hover { background: var(--surface2); }
+
+  .mini-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    text-align: center;
+  }
+
+  .mini-cal-day-label {
+    font-size: 10px;
+    color: var(--text3);
+    padding: 3px 0;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .mini-cal-day {
+    font-size: 12px;
+    padding: 5px 2px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text2);
+    transition: all 0.1s;
+    position: relative;
+  }
+
+  .mini-cal-day:hover { background: var(--surface2); color: var(--text); }
+  .mini-cal-day.today { background: var(--accent); color: #0a0a0f; font-weight: 700; }
+  .mini-cal-day.selected { background: var(--accent2); color: #fff; font-weight: 600; }
+  .mini-cal-day.has-data::after {
+    content: '';
+    display: block;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin: 1px auto 0;
+  }
+  .mini-cal-day.today.has-data::after { background: #0a0a0f; }
+  .mini-cal-day.empty { color: transparent; pointer-events: none; }
+
+  /* ===== MAIN ===== */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    transition: margin-left 0.3s;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    background: rgba(10,10,15,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 50;
+    gap: 12px;
+  }
+
+  /* Hamburger button */
+  .hamburger {
+    display: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 38px; height: 38px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 5px;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .hamburger:hover { background: var(--surface3); }
+  .hamburger span {
+    display: block;
+    width: 18px; height: 2px;
+    background: var(--text);
+    border-radius: 2px;
+    transition: all 0.3s;
+  }
+
+  .page-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+  }
+
+  .topbar-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .date-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text2);
+    background: var(--surface2);
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  /* Calendar quick-jump button in topbar */
+  .btn-cal {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Sarabun', sans-serif;
+    white-space: nowrap;
+  }
+  .btn-cal:hover { background: var(--surface3); color: var(--accent); border-color: var(--accent); }
+
+  .btn {
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid var(--border);
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #0a0a0f;
+    font-weight: 700;
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { opacity: 0.85; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+  }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+
+  /* ===== CONTENT ===== */
+  .content {
+    padding: 28px 32px;
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .view { display: none; }
+  .view.active { display: block; animation: fadeIn 0.25s ease; }
+
+  /* ===== PROGRESS HEADER ===== */
+  .progress-header {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 20px;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+    border-radius: 2px 2px 0 0;
+  }
+
+  .progress-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .progress-sub {
+    font-size: 13px;
+    color: var(--text2);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* Mood quick select */
+  .mood-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  .mood-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .mood-btn:hover { border-color: var(--accent2); color: var(--text); }
+  .mood-btn.selected { border-color: var(--accent2); background: rgba(129,140,248,0.15); color: var(--accent2); }
+
+  .progress-ring-wrap { position: relative; width: 80px; height: 80px; }
+
+  .progress-ring { transform: rotate(-90deg); }
+
+  .progress-ring-bg { fill: none; stroke: var(--surface3); stroke-width: 6; }
+  .progress-ring-fill {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease;
+  }
+
+  .progress-pct {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .progress-bar-wrap {
+    margin-top: 14px;
+    background: var(--surface3);
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+    max-width: 320px;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.5s ease;
+  }
+
+  /* ===== MOTIVATIONAL QUOTE BANNER ===== */
+  .quote-banner {
+    background: linear-gradient(135deg, rgba(110,231,183,0.08), rgba(129,140,248,0.08));
+    border: 1px solid rgba(110,231,183,0.2);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .quote-banner:hover { border-color: rgba(110,231,183,0.4); }
+  .quote-banner::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--accent), var(--accent2));
+  }
+  .quote-icon { font-size: 20px; flex-shrink: 0; }
+  .quote-text {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+    font-style: italic;
+    flex: 1;
+  }
+  .quote-refresh {
+    color: var(--text3);
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: transform 0.3s;
+  }
+  .quote-banner:hover .quote-refresh { transform: rotate(180deg); }
+
+  /* ===== ROUTINE BLOCKS ===== */
+  .routine-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+
+  .routine-block:hover { border-color: rgba(110,231,183,0.2); }
+  .routine-block.completed { border-color: rgba(110,231,183,0.35); background: rgba(110,231,183,0.03); }
+
+  .block-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .block-header:hover { background: rgba(255,255,255,0.02); }
+
+  .block-time {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    white-space: nowrap;
+    min-width: 88px;
+  }
+
+  .block-info { flex: 1; min-width: 0; }
+
+  .block-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .block-progress-text {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .block-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .block-mini-progress { display: flex; gap: 4px; }
+
+  .mini-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--surface3);
+    transition: background 0.2s, transform 0.15s;
+  }
+  .mini-dot.done { background: var(--accent); transform: scale(1.2); }
+
+  .block-chevron {
+    color: var(--text3);
+    font-size: 16px;
+    transition: transform 0.25s;
+  }
+  .routine-block.open .block-chevron { transform: rotate(180deg); }
+
+  .block-body {
+    display: none;
+    padding: 0 18px 16px;
+    border-top: 1px solid var(--border);
+  }
+  .routine-block.open .block-body { display: block; }
+
+  .block-quote {
+    font-size: 12px;
+    color: var(--text3);
+    font-style: italic;
+    padding: 12px 0 14px;
+    line-height: 1.7;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 14px;
+  }
+
+  .task-list { display: flex; flex-direction: column; gap: 7px; }
+
+  .task-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .task-item:hover { background: var(--surface3); }
+  .task-item:active { transform: scale(0.98); }
+  .task-item.checked { border-color: rgba(110,231,183,0.2); }
+
+  .custom-check {
+    width: 20px; height: 20px;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .task-item.checked .custom-check {
+    background: var(--accent);
+    border-color: var(--accent);
+    animation: pop 0.25s ease;
+  }
+
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+
+  .check-mark {
+    color: #0a0a0f;
+    font-size: 12px;
+    font-weight: 900;
+    display: none;
+  }
+  .task-item.checked .check-mark { display: block; }
+
+  .task-text {
+    font-size: 14px;
+    color: var(--text2);
+    transition: color 0.15s;
+    flex: 1;
+  }
+
+  .task-item.checked .task-text {
+    color: var(--text3);
+    text-decoration: line-through;
+    text-decoration-color: var(--accent);
+  }
+
+  .block-completed-banner {
+    display: none;
+    font-size: 11px;
+    color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 3px 8px;
+    background: rgba(110,231,183,0.1);
+    border-radius: 4px;
+    animation: fadeIn 0.3s ease;
+  }
+  .routine-block.completed .block-completed-banner { display: block; }
+
+  /* ===== FLOATING CALENDAR BUTTON ===== */
+  .fab-cal {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    width: 52px; height: 52px;
+    background: var(--accent2);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 24px rgba(129,140,248,0.5);
+    z-index: 80;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .fab-cal:hover { transform: scale(1.1) rotate(8deg); box-shadow: 0 8px 32px rgba(129,140,248,0.7); }
+  .fab-cal:active { transform: scale(0.95); }
+  .fab-cal-tooltip {
+    position: fixed;
+    bottom: 90px;
+    right: 28px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text2);
+    font-family: 'IBM Plex Mono', monospace;
+    white-space: nowrap;
+    z-index: 80;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: all 0.2s;
+  }
+  .fab-cal:hover + .fab-cal-tooltip { opacity: 1; transform: translateY(0); }
+
+  /* ===== STATS VIEW ===== */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: all 0.2s;
+    cursor: default;
+  }
+  .stat-card:hover { border-color: rgba(110,231,183,0.3); transform: translateY(-2px); }
+
+  .stat-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .stat-sub { font-size: 12px; color: var(--text3); margin-top: 6px; }
+
+  /* ===== CALENDAR VIEW ===== */
+  .full-calendar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .cal-month-title {
+    font-size: 20px;
+    font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text);
+  }
+
+  .cal-nav-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.15s;
+  }
+  .cal-nav-btn:hover { background: var(--surface3); }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+
+  .cal-day-header {
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--text3);
+    padding: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+  }
+
+  .cal-day {
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    position: relative;
+    background: var(--surface2);
+    gap: 2px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cal-day:hover { border-color: var(--border); background: var(--surface3); transform: scale(1.05); }
+  .cal-day:active { transform: scale(0.97); }
+  .cal-day.empty { background: transparent; cursor: default; pointer-events: none; }
+  .cal-day.today { border-color: var(--accent); }
+
+  .cal-day-num {
+    font-size: 13px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    color: var(--text2);
+  }
+  .cal-day.today .cal-day-num { color: var(--accent); }
+
+  .cal-day-pct {
+    font-size: 9px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text3);
+  }
+
+  .cal-day-bar {
+    width: 70%;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--surface3);
+    overflow: hidden;
+  }
+
+  .cal-day-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent);
+    transition: width 0.3s;
+  }
+  .cal-day-bar-fill.mid { background: var(--gold); }
+  .cal-day-bar-fill.low { background: var(--red); }
+
+  /* Calendar legend */
+  .cal-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .cal-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .cal-legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+  }
+
+  /* ===== JOURNAL VIEW ===== */
+  .journal-date-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .journal-date-display {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    flex: 1;
+    text-align: center;
+    color: var(--text);
+  }
+
+  .journal-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 14px;
+    transition: border-color 0.2s;
+  }
+  .journal-card:focus-within { border-color: rgba(129,140,248,0.4); }
+
+  .journal-card-title {
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .journal-textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+    line-height: 1.8;
+    padding: 14px 16px;
+    resize: vertical;
+    min-height: 100px;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  .journal-textarea:focus { border-color: var(--accent2); }
+  .journal-textarea::placeholder { color: var(--text3); }
+
+  .journal-save-btn {
+    margin-top: 10px;
+    padding: 10px 24px;
+    background: var(--accent2);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .journal-save-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+  .journal-save-btn:active { transform: translateY(0); }
+
+  .saved-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--accent);
+    font-size: 12px;
+    margin-left: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .saved-badge.show { opacity: 1; }
+
+  /* Word count */
+  .char-count {
+    font-size: 11px;
+    color: var(--text3);
+    text-align: right;
+    margin-top: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ===== HEATMAP ===== */
+  .heatmap-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+  }
+
+  .heatmap-title {
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 16px;
+  }
+
+  .heatmap-grid {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    min-width: 300px;
+  }
+
+  .hm-cell {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+    background: var(--surface3);
+    position: relative;
+    cursor: default;
+    transition: transform 0.1s;
+  }
+  .hm-cell:hover { transform: scale(1.4); z-index: 2; }
+  .hm-cell[data-level="1"] { background: rgba(110,231,183,0.2); }
+  .hm-cell[data-level="2"] { background: rgba(110,231,183,0.45); }
+  .hm-cell[data-level="3"] { background: rgba(110,231,183,0.7); }
+  .hm-cell[data-level="4"] { background: rgba(110,231,183,1); }
+
+  /* ===== TOAST ===== */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 10px 18px;
+    font-size: 13px;
+    color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace;
+    z-index: 1000;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    box-shadow: 0 4px 20px rgba(110,231,183,0.2);
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ===== CONFETTI ===== */
+  .confetti-piece {
+    position: fixed;
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 9999;
+    animation: confettiFall 1.5s ease forwards;
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* ===== MOBILE BOTTOM NAV ===== */
+  .mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(17,17,24,0.97);
+    border-top: 1px solid var(--border);
+    backdrop-filter: blur(16px);
+    z-index: 85;
+    padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+  }
+
+  .mobile-nav-items {
+    display: flex;
+    justify-content: space-around;
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text3);
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    flex: 1;
+    letter-spacing: 0.5px;
+  }
+  .mobile-nav-item .mn-icon { font-size: 20px; transition: transform 0.2s; }
+  .mobile-nav-item.active { color: var(--accent); }
+  .mobile-nav-item.active .mn-icon { transform: scale(1.2); }
+  .mobile-nav-item:active { opacity: 0.7; }
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideInLeft {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    .sidebar {
+      transform: translateX(-100%);
+      width: 280px;
+    }
+    .sidebar.open {
+      transform: translateX(0);
+    }
+    .sidebar-close { display: flex; }
+    .sidebar-overlay { display: block; }
+
+    .main {
+      margin-left: 0 !important;
+      padding-bottom: 72px;
+    }
+
+    .hamburger { display: flex; }
+
+    .topbar { padding: 12px 16px; }
+    .topbar-actions .date-badge { display: none; }
+    .btn-cal { padding: 6px 10px; font-size: 12px; }
+
+    .content { padding: 16px; }
+
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+    .progress-header {
+      grid-template-columns: 1fr;
+    }
+    .progress-ring-wrap { display: none; }
+
+    .fab-cal { bottom: 88px; right: 16px; }
+    .fab-cal-tooltip { display: none; }
+
+    .mobile-bottom-nav { display: block; }
+
+    .block-time { min-width: 70px; font-size: 10px; }
+    .block-title { font-size: 14px; }
+
+    .cal-grid { gap: 3px; }
+    .cal-day { border-radius: 6px; }
+    .cal-day-num { font-size: 11px; }
+    .cal-day-pct { display: none; }
+
+    .full-calendar { padding: 16px; }
+    .cal-month-title { font-size: 16px; }
+  }
+
+  @media (max-width: 480px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .stat-value { font-size: 22px; }
+    .block-mini-progress { display: none; }
+    .mood-row { gap: 5px; }
+    .mood-btn { padding: 3px 8px; font-size: 12px; }
+  }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border); }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-group">
+      <div class="logo-text">Discipline</div>
+      <div class="logo-sub">1% Daily Tracker</div>
+    </div>
+    <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">เมนู</div>
+    <div class="nav-item active" id="nav-routine" onclick="switchView('routine', this)">
+      <span class="nav-icon">⚡</span> Routine วันนี้
+    </div>
+    <div class="nav-item" id="nav-calendar" onclick="switchView('calendar', this)">
+      <span class="nav-icon">📅</span> ปฏิทิน
+    </div>
+    <div class="nav-item" id="nav-stats" onclick="switchView('stats', this)">
+      <span class="nav-icon">📊</span> สถิติ
+    </div>
+    <div class="nav-item" id="nav-journal" onclick="switchView('journal', this)">
+      <span class="nav-icon">📝</span> บันทึก
+    </div>
+  </div>
+
+  <div class="sidebar-calendar">
+    <div class="mini-cal-header">
+      <div class="mini-cal-title" id="miniCalTitle"></div>
+      <div style="display:flex;gap:2px">
+        <button class="mini-cal-nav" onclick="miniCalNav(-1)">‹</button>
+        <button class="mini-cal-nav" onclick="miniCalNav(1)">›</button>
+      </div>
+    </div>
+    <div class="mini-cal-grid" id="miniCalGrid"></div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main" id="main">
+  <div class="topbar">
+    <!-- Hamburger (mobile) -->
+    <button class="hamburger" onclick="openSidebar()" aria-label="เมนู">
+      <span></span><span></span><span></span>
+    </button>
+
+    <div class="page-title">
+      <span id="topbarIcon">⚡</span>
+      <span id="topbarTitle">Routine วันนี้</span>
+    </div>
+
+    <div class="topbar-actions">
+      <!-- Calendar Quick-Jump Button -->
+      <button class="btn-cal" onclick="switchView('calendar', document.getElementById('nav-calendar'))">
+        📅 <span id="topbarDate"></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ===== ROUTINE VIEW ===== -->
+    <div class="view active" id="view-routine">
+      <div class="progress-header">
+        <div>
+          <div class="progress-title" id="routineDateTitle">Routine วันนี้</div>
+          <div class="progress-sub" id="routineDateSub"></div>
+          <!-- Mood Quick Select -->
+          <div class="mood-row" id="moodRow">
+            <button class="mood-btn" data-mood="🔥" onclick="selectMood(this)">🔥 ไฟแรง</button>
+            <button class="mood-btn" data-mood="😊" onclick="selectMood(this)">😊 ดี</button>
+            <button class="mood-btn" data-mood="😐" onclick="selectMood(this)">😐 โอเค</button>
+            <button class="mood-btn" data-mood="😴" onclick="selectMood(this)">😴 เหนื่อย</button>
+          </div>
+          <div class="progress-bar-wrap" style="margin-top:14px">
+            <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="progress-ring-wrap">
+          <svg class="progress-ring" width="80" height="80" viewBox="0 0 80 80">
+            <circle class="progress-ring-bg" cx="40" cy="40" r="34"/>
+            <circle class="progress-ring-fill" id="progressRingFill" cx="40" cy="40" r="34"
+              stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+          </svg>
+          <div class="progress-pct" id="progressPct">0%</div>
+        </div>
+      </div>
+
+      <!-- Motivational Quote -->
+      <div class="quote-banner" onclick="refreshQuote()">
+        <div class="quote-icon">💡</div>
+        <div class="quote-text" id="quoteText"></div>
+        <div class="quote-refresh">↻</div>
+      </div>
+
+      <div id="routineList"></div>
+    </div>
+
+    <!-- ===== CALENDAR VIEW ===== -->
+    <div class="view" id="view-calendar">
+      <div class="full-calendar">
+        <div class="cal-header">
+          <button class="cal-nav-btn" onclick="calNav(-1)">◀</button>
+          <div class="cal-month-title" id="calMonthTitle"></div>
+          <button class="cal-nav-btn" onclick="calNav(1)">▶</button>
+        </div>
+        <div class="cal-grid" id="fullCalGrid"></div>
+        <div class="cal-legend">
+          <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--accent)"></div>≥80%</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--gold)"></div>50-79%</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--red)"></div>&lt;50%</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--surface3)"></div>ไม่มีข้อมูล</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== STATS VIEW ===== -->
+    <div class="view" id="view-stats">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">🔥 Streak</div>
+          <div class="stat-value" id="statStreak">0</div>
+          <div class="stat-sub">วันติดต่อกัน (>50%)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">📅 วันที่ทำ</div>
+          <div class="stat-value" id="statDays">0</div>
+          <div class="stat-sub">วันที่บันทึกข้อมูล</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">⭐ เฉลี่ย</div>
+          <div class="stat-value" id="statAvg">0%</div>
+          <div class="stat-sub">เฉลี่ยทุกวัน</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">🏆 สูงสุด</div>
+          <div class="stat-value" id="statBest">0%</div>
+          <div class="stat-sub">วันที่ดีที่สุด</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">✅ Tasks รวม</div>
+          <div class="stat-value" id="statTasks">0</div>
+          <div class="stat-sub">tasks ที่ทำสำเร็จ</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">💯 100% วัน</div>
+          <div class="stat-value" id="statPerfect">0</div>
+          <div class="stat-sub">วันที่สมบูรณ์แบบ</div>
+        </div>
+      </div>
+
+      <div class="heatmap-wrap">
+        <div class="heatmap-title">Activity Heatmap — ย้อนหลัง 90 วัน</div>
+        <div class="heatmap-grid" id="heatmapGrid"></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:12px;font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace;">
+          น้อย
+          <div style="width:12px;height:12px;border-radius:2px;background:var(--surface3)"></div>
+          <div style="width:12px;height:12px;border-radius:2px;background:rgba(110,231,183,0.2)"></div>
+          <div style="width:12px;height:12px;border-radius:2px;background:rgba(110,231,183,0.45)"></div>
+          <div style="width:12px;height:12px;border-radius:2px;background:rgba(110,231,183,0.7)"></div>
+          <div style="width:12px;height:12px;border-radius:2px;background:rgba(110,231,183,1)"></div>
+          มาก
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== JOURNAL VIEW ===== -->
+    <div class="view" id="view-journal">
+      <div class="journal-date-nav">
+        <button class="cal-nav-btn" onclick="journalNav(-1)">◀</button>
+        <div class="journal-date-display" id="journalDateDisplay"></div>
+        <button class="cal-nav-btn" onclick="journalNav(1)">▶</button>
+      </div>
+
+      <div class="journal-card">
+        <div class="journal-card-title">🌅 เป้าหมายวันนี้</div>
+        <textarea class="journal-textarea" id="journalGoals" rows="3" placeholder="เป้าหมายที่ต้องการทำสำเร็จวันนี้..."></textarea>
+        <div class="char-count" id="ccGoals">0 ตัวอักษร</div>
+      </div>
+
+      <div class="journal-card">
+        <div class="journal-card-title">💭 Gratitude 3 ข้อ</div>
+        <textarea class="journal-textarea" id="journalGratitude" rows="3" placeholder="สิ่งที่ขอบคุณวันนี้..."></textarea>
+        <div class="char-count" id="ccGratitude">0 ตัวอักษร</div>
+      </div>
+
+      <div class="journal-card">
+        <div class="journal-card-title">📚 สิ่งที่เรียนรู้</div>
+        <textarea class="journal-textarea" id="journalLearned" rows="3" placeholder="สิ่งที่ได้เรียนรู้วันนี้..."></textarea>
+        <div class="char-count" id="ccLearned">0 ตัวอักษร</div>
+      </div>
+
+      <div class="journal-card">
+        <div class="journal-card-title">🌙 Daily Reflection</div>
+        <textarea class="journal-textarea" id="journalReflection" rows="5" placeholder="สรุปวันนี้ รู้สึกอย่างไร ทำได้ดีแค่ไหน..."></textarea>
+        <div class="char-count" id="ccReflection">0 ตัวอักษร</div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <button class="journal-save-btn" onclick="saveJournal()">💾 บันทึก</button>
+        <span class="saved-badge" id="journalSavedBadge">✓ บันทึกแล้ว</span>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- FAB Calendar Button -->
+<button class="fab-cal" onclick="switchView('calendar', document.getElementById('nav-calendar'))" title="ดูปฏิทิน">
+  📅
+</button>
+<div class="fab-cal-tooltip">ดูปฏิทิน</div>
+
+<!-- Mobile Bottom Nav -->
+<nav class="mobile-bottom-nav">
+  <div class="mobile-nav-items">
+    <div class="mobile-nav-item active" id="mnav-routine" onclick="switchView('routine', document.getElementById('nav-routine')); updateMobileNav('routine')">
+      <span class="mn-icon">⚡</span>Routine
+    </div>
+    <div class="mobile-nav-item" id="mnav-calendar" onclick="switchView('calendar', document.getElementById('nav-calendar')); updateMobileNav('calendar')">
+      <span class="mn-icon">📅</span>ปฏิทิน
+    </div>
+    <div class="mobile-nav-item" id="mnav-stats" onclick="switchView('stats', document.getElementById('nav-stats')); updateMobileNav('stats')">
+      <span class="mn-icon">📊</span>สถิติ
+    </div>
+    <div class="mobile-nav-item" id="mnav-journal" onclick="switchView('journal', document.getElementById('nav-journal')); updateMobileNav('journal')">
+      <span class="mn-icon">📝</span>บันทึก
+    </div>
+  </div>
+</nav>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== DATA ====================
+const BLOCKS = [
+  {
+    id: 'wake', time: '04:30–05:00', title: 'ตื่น + ไม่กดเลื่อน',
+    quote: 'การตื่นเช้าเป็นสัญลักษณ์ของการชนะตัวเองครั้งแรกของวัน คนระดับ 1% ทุกคนควบคุมเวลาตื่น',
+    tasks: ['วางโทรศัพท์ไว้อีกห้อง (ไม่กดเลื่อน)', 'ดื่มน้ำ 500ml ทันทีที่ตื่น', 'เปิดไฟ/ม่าน ให้แสงเข้า']
+  },
+  {
+    id: 'exercise', time: '05:00–06:00', title: 'ออกกำลังกาย',
+    quote: 'Exercise = ยาที่ดีที่สุดสำหรับสมอง เพิ่ม BDNF, dopamine, serotonin ทำให้ focus ดีขึ้นตลอดวัน',
+    tasks: ['วอร์มอัพ 5 นาที', 'ออกกำลังกาย 40–50 นาที (วิ่ง/ยิม/ลองบอร์ด)', 'Cool down + stretch 5 นาที']
+  },
+  {
+    id: 'mindset', time: '06:00–06:30', title: 'Mindset Morning',
+    quote: '30 นาทีนี้โปรแกรม subconscious ก่อนโลกมาดึงความสนใจ นักเทรดและนักธุรกิจระดับโลกใช้เวลานี้',
+    tasks: ['Meditation 10 นาที (Wim Hof หรือ breathwork)', 'เขียน gratitude 3 ข้อ + เป้าหมายวันนี้', 'อ่านหนังสือ 15 นาที (trading/business/mindset)']
+  },
+  {
+    id: 'trading', time: '06:30–08:30', title: 'Deep Work: Trading',
+    quote: 'ช่วงเช้าสมองอยู่ใน peak state ที่สุด ใช้ analyze chart, บันทึก trade journal, ศึกษา strategy ใหม่',
+    tasks: ['Review chart + บันทึก trade journal เมื่อวาน', 'วิเคราะห์ setup วันนี้ (อย่างน้อย 3 pair)', 'เรียน/ศึกษา strategy หรือ backtesting 30 นาที']
+  },
+  {
+    id: 'content', time: '08:30–10:30', title: 'Deep Work: Content',
+    quote: 'Content = leverage ที่ทรงพลังที่สุด การสร้างคอนเทนต์ตอนสมองยังสดทำให้ได้งานคุณภาพสูง',
+    tasks: ['เขียน script/outline คอนเทนต์ 1 ชิ้น', 'ถ่าย/ตัด/โพสต์ หรือ schedule', 'ตอบ comment + engage community 15 นาที']
+  },
+  {
+    id: 'breakfast', time: '10:30–11:00', title: 'พักฟื้น + ข้าวเช้า',
+    quote: 'สมองต้องการ recovery cycle ทุก 90 นาที การพักอย่างมีคุณภาพไม่ใช่การเสียเวลา',
+    tasks: ['ทานอาหารเช้า (protein + carb สมดุล)', 'เดิน/ยืดเส้น ออกจากหน้าจอ', 'ห้ามดูโซเชียลมีเดีย']
+  },
+  {
+    id: 'business', time: '11:00–13:00', title: 'Deep Work: ธุรกิจ',
+    quote: 'ช่วงนี้ใช้สำหรับงาน high-leverage ของธุรกิจ ไม่ว่าจะเป็น client work, marketing, product, system building',
+    tasks: ['งาน business priority #1 วันนี้', 'ประชุม/call ถ้ามี (จัดไว้ช่วงนี้เท่านั้น)', 'Review KPI / metrics ของธุรกิจ']
+  },
+  {
+    id: 'lunch', time: '13:00–14:00', title: 'พัก + กลางวัน',
+    quote: 'Power nap 20 นาทีแสดงผลวิจัยว่า boost performance 34%',
+    tasks: ['ทานกลางวัน (หลีกเลี่ยงน้ำตาลสูง)', 'Power nap 20 นาที (ตั้ง alarm)', 'ไม่เช็คโทรศัพท์ระหว่างทาน']
+  },
+  {
+    id: 'learn', time: '14:00–16:00', title: 'ทบทวน + เรียนรู้',
+    quote: 'Compound learning — ทุก 1 ชั่วโมงที่ลงทุนเรียนรู้วันนี้ คือ competitive advantage ที่คนอื่นไม่มี',
+    tasks: ['เรียน course / อ่าน / ดู educational content', 'บันทึกสิ่งที่เรียนรู้ใน Notion/สมุด', 'Apply สิ่งที่เรียนกับ trading หรือ business']
+  },
+  {
+    id: 'admin', time: '16:00–17:30', title: 'งาน Admin + ติดตาม',
+    quote: 'จัดการงาน reactive ทั้งหมดในช่วงเดียว แทนที่จะให้มันมาขัดจังหวะ deep work ตลอดวัน',
+    tasks: ['ตอบ email/message ทั้งหมด', 'จัดการงาน admin / เอกสาร', 'Plan ตาราง + priority ของพรุ่งนี้']
+  },
+  {
+    id: 'family', time: '18:00–20:00', title: 'เวลาส่วนตัว + ครอบครัว',
+    quote: 'Sustainable success ต้องมีเวลา recharge ทั้งร่างกายและจิตใจ คนที่ burn out ไม่มีวันไปถึงเป้าหมาย',
+    tasks: ['เวลากับครอบครัว/คนที่รัก', 'ทานอาหารเย็น (ไม่ดูจอ)', 'กิจกรรมผ่อนคลาย']
+  },
+  {
+    id: 'winddown', time: '20:00–21:00', title: 'Wind Down',
+    quote: 'Sleep = performance enhancer ที่ฟรีและทรงพลังที่สุด Preparation สำหรับนอนหลับคุณภาพสูง',
+    tasks: ['No screen 1 ชั่วโมงก่อนนอน', 'เขียน daily journal (app นี้)', 'เตรียมของสำหรับพรุ่งนี้', 'นอน 21:00–21:30 (ให้ได้ 7 ชม.)']
+  }
+];
+
+const QUOTES = [
+  'We are what we repeatedly do. Excellence, then, is not an act, but a habit. — Aristotle',
+  'The secret to your success is found in your daily routine.',
+  'Motivation gets you started. Discipline keeps you going.',
+  '1% better every day = 37x better at the end of the year.',
+  'Don\'t count the days, make the days count.',
+  'Small daily improvements over time create stunning results.',
+  'You don\'t rise to the level of your goals, you fall to the level of your systems.',
+  'Success is the sum of small efforts repeated day in and day out.',
+  'The pain of discipline is far less than the pain of regret.',
+  'Hard choices, easy life. Easy choices, hard life.',
+];
+
+// ==================== STATE ====================
+const today = new Date();
+today.setHours(0,0,0,0);
+
+let currentRoutineDate = dateKey(today);
+let currentJournalDate = dateKey(today);
+let calViewMonth = today.getMonth();
+let calViewYear = today.getFullYear();
+let miniCalMonth = today.getMonth();
+let miniCalYear = today.getFullYear();
+let currentQuoteIdx = Math.floor(Math.random() * QUOTES.length);
+
+function dateKey(d) { return d.toISOString().split('T')[0]; }
+function parseDate(key) {
+  const [y,m,d] = key.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+
+function getStorage(key) {
+  try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; }
+}
+function setStorage(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+function getChecks(dateStr) { return getStorage('checks_' + dateStr) || {}; }
+function setChecks(dateStr, checks) { setStorage('checks_' + dateStr, checks); }
+
+function getJournal(dateStr) {
+  return getStorage('journal_' + dateStr) || { goals:'', gratitude:'', learned:'', reflection:'' };
+}
+function setJournal(dateStr, data) { setStorage('journal_' + dateStr, data); }
+
+function getMood(dateStr) { return getStorage('mood_' + dateStr) || ''; }
+function setMood(dateStr, mood) { setStorage('mood_' + dateStr, mood); }
+
+function calcProgress(dateStr) {
+  const checks = getChecks(dateStr);
+  let total = 0, done = 0;
+  BLOCKS.forEach(b => {
+    total += b.tasks.length;
+    (checks[b.id] || []).forEach(v => { if(v) done++; });
+  });
+  return total === 0 ? 0 : Math.round((done/total)*100);
+}
+
+// ==================== SIDEBAR MOBILE ====================
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  const ov = document.getElementById('sidebarOverlay');
+  ov.style.display = 'block';
+  requestAnimationFrame(() => ov.classList.add('show'));
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  const ov = document.getElementById('sidebarOverlay');
+  ov.classList.remove('show');
+  setTimeout(() => { ov.style.display = 'none'; }, 300);
+}
+
+// ==================== MOBILE NAV ====================
+function updateMobileNav(viewId) {
+  document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById('mnav-' + viewId);
+  if (el) el.classList.add('active');
+}
+
+// ==================== QUOTES ====================
+function refreshQuote() {
+  currentQuoteIdx = (currentQuoteIdx + 1) % QUOTES.length;
+  document.getElementById('quoteText').textContent = QUOTES[currentQuoteIdx];
+}
+
+// ==================== MOOD ====================
+function selectMood(btn) {
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  setMood(currentRoutineDate, btn.dataset.mood);
+  showToast('Mood: ' + btn.dataset.mood + ' บันทึกแล้ว');
+}
+
+function loadMood() {
+  const mood = getMood(currentRoutineDate);
+  document.querySelectorAll('.mood-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.mood === mood);
+  });
+}
+
+// ==================== ROUTINE VIEW ====================
+function renderRoutine() {
+  const d = parseDate(currentRoutineDate);
+  const isToday = currentRoutineDate === dateKey(today);
+
+  document.getElementById('routineDateTitle').textContent = isToday ? 'Routine วันนี้' : formatDateTH(d);
+  const days = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  document.getElementById('routineDateSub').textContent =
+    `วัน${days[d.getDay()]} · ${formatDateTH(d)}`;
+
+  loadMood();
+
+  const checks = getChecks(currentRoutineDate);
+  const list = document.getElementById('routineList');
+  list.innerHTML = '';
+
+  BLOCKS.forEach((block, idx) => {
+    const blockChecks = checks[block.id] || block.tasks.map(() => false);
+    const doneCount = blockChecks.filter(Boolean).length;
+    const total = block.tasks.length;
+    const allDone = doneCount === total;
+
+    const el = document.createElement('div');
+    el.className = 'routine-block' + (allDone ? ' completed' : '');
+    el.dataset.id = block.id;
+    el.style.animationDelay = (idx * 30) + 'ms';
+
+    el.innerHTML = `
+      <div class="block-header" onclick="toggleBlock('${block.id}')">
+        <div class="block-time">${block.time}</div>
+        <div class="block-info">
+          <div class="block-title">${block.title}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:3px">
+            <div class="block-progress-text">${doneCount}/${total}</div>
+            <span class="block-completed-banner">✓ สำเร็จ</span>
+          </div>
+        </div>
+        <div class="block-right">
+          <div class="block-mini-progress">
+            ${block.tasks.map((_,i) => `<div class="mini-dot${blockChecks[i] ? ' done' : ''}"></div>`).join('')}
+          </div>
+          <div class="block-chevron">▾</div>
+        </div>
+      </div>
+      <div class="block-body">
+        <div class="block-quote">${block.quote}</div>
+        <div class="task-list">
+          ${block.tasks.map((t,i) => `
+            <div class="task-item${blockChecks[i] ? ' checked' : ''}" onclick="toggleTask('${block.id}', ${i})">
+              <div class="custom-check"><span class="check-mark">✓</span></div>
+              <div class="task-text">${t}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    list.appendChild(el);
+  });
+
+  updateProgress();
+}
+
+function toggleBlock(blockId) {
+  const el = document.querySelector(`.routine-block[data-id="${blockId}"]`);
+  el.classList.toggle('open');
+}
+
+function toggleTask(blockId, taskIdx) {
+  const checks = getChecks(currentRoutineDate);
+  const block = BLOCKS.find(b => b.id === blockId);
+  if (!checks[blockId]) checks[blockId] = block.tasks.map(() => false);
+  const wasChecked = checks[blockId][taskIdx];
+  checks[blockId][taskIdx] = !wasChecked;
+  setChecks(currentRoutineDate, checks);
+
+  // Check if block just completed
+  const allDone = checks[blockId].every(Boolean);
+  if (allDone && !wasChecked) {
+    launchConfetti();
+  }
+
+  renderRoutine();
+  renderMiniCal();
+  showToast(checks[blockId][taskIdx] ? '✓ ทำสำเร็จ!' : '↩ ยกเลิก');
+}
+
+function updateProgress() {
+  const pct = calcProgress(currentRoutineDate);
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+  const circ = 213.6;
+  const offset = circ - (circ * pct / 100);
+  document.getElementById('progressRingFill').style.strokeDashoffset = offset;
+
+  // Color change based on progress
+  const color = pct >= 80 ? 'var(--accent)' : pct >= 50 ? 'var(--gold)' : 'var(--red)';
+  document.getElementById('progressRingFill').style.stroke = pct === 0 ? 'var(--accent)' : color;
+  document.getElementById('progressPct').style.color = pct === 0 ? 'var(--accent)' : color;
+}
+
+// ==================== CONFETTI ====================
+function launchConfetti() {
+  const colors = ['#6ee7b7', '#818cf8', '#f472b6', '#fbbf24', '#f87171'];
+  for (let i = 0; i < 20; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.top = '0';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.animationDuration = (1 + Math.random() * 1) + 's';
+    el.style.animationDelay = Math.random() * 0.5 + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2500);
+  }
+}
+
+// ==================== FULL CALENDAR ====================
+function renderFullCal() {
+  const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+    'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+  document.getElementById('calMonthTitle').textContent = `${months[calViewMonth]} ${calViewYear + 543}`;
+
+  const grid = document.getElementById('fullCalGrid');
+  grid.innerHTML = '';
+
+  ['อา','จ','อ','พ','พฤ','ศ','ส'].forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-day-header';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const first = new Date(calViewYear, calViewMonth, 1);
+  const startDay = first.getDay();
+  const daysInMonth = new Date(calViewYear, calViewMonth+1, 0).getDate();
+  const todayKey = dateKey(today);
+
+  for (let i = 0; i < startDay; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day empty';
+    grid.appendChild(el);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dt = new Date(calViewYear, calViewMonth, d);
+    const key = dateKey(dt);
+    const pct = calcProgress(key);
+    const isToday = key === todayKey;
+
+    const el = document.createElement('div');
+    el.className = 'cal-day' + (isToday ? ' today' : '');
+    el.title = `${key}: ${pct}%`;
+    el.onclick = () => { switchToRoutineDate(key); };
+
+    const barClass = pct >= 80 ? 'high' : pct >= 50 ? 'mid' : 'low';
+
+    el.innerHTML = `
+      <div class="cal-day-num">${d}</div>
+      <div class="cal-day-bar"><div class="cal-day-bar-fill ${barClass}" style="width:${pct}%"></div></div>
+      <div class="cal-day-pct">${pct > 0 ? pct+'%' : ''}</div>
+    `;
+    grid.appendChild(el);
+  }
+}
+
+function calNav(dir) {
+  calViewMonth += dir;
+  if (calViewMonth > 11) { calViewMonth = 0; calViewYear++; }
+  if (calViewMonth < 0) { calViewMonth = 11; calViewYear--; }
+  renderFullCal();
+}
+
+// ==================== MINI CALENDAR ====================
+function renderMiniCal() {
+  const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.',
+    'ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  document.getElementById('miniCalTitle').textContent = `${months[miniCalMonth]} ${miniCalYear+543}`;
+
+  const grid = document.getElementById('miniCalGrid');
+  grid.innerHTML = '';
+
+  ['อ','จ','อ','พ','พ','ศ','ส'].forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'mini-cal-day-label';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const first = new Date(miniCalYear, miniCalMonth, 1);
+  const startDay = first.getDay();
+  const daysInMonth = new Date(miniCalYear, miniCalMonth+1, 0).getDate();
+  const todayKey = dateKey(today);
+
+  for (let i = 0; i < startDay; i++) {
+    const el = document.createElement('div');
+    el.className = 'mini-cal-day empty';
+    el.textContent = ' ';
+    grid.appendChild(el);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dt = new Date(miniCalYear, miniCalMonth, d);
+    const key = dateKey(dt);
+    const pct = calcProgress(key);
+    const isToday = key === todayKey;
+    const isSelected = key === currentRoutineDate;
+
+    const el = document.createElement('div');
+    el.className = 'mini-cal-day' +
+      (isToday ? ' today' : '') +
+      (isSelected && !isToday ? ' selected' : '') +
+      (pct > 0 ? ' has-data' : '');
+    el.textContent = d;
+    el.onclick = () => switchToRoutineDate(key);
+    grid.appendChild(el);
+  }
+}
+
+function miniCalNav(dir) {
+  miniCalMonth += dir;
+  if (miniCalMonth > 11) { miniCalMonth = 0; miniCalYear++; }
+  if (miniCalMonth < 0) { miniCalMonth = 11; miniCalYear--; }
+  renderMiniCal();
+}
+
+function switchToRoutineDate(key) {
+  currentRoutineDate = key;
+  switchView('routine', document.getElementById('nav-routine'));
+  updateMobileNav('routine');
+  renderRoutine();
+  renderMiniCal();
+  if (window.innerWidth <= 768) closeSidebar();
+}
+
+// ==================== STATS ====================
+function renderStats() {
+  const allKeys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('checks_')) allKeys.push(k.replace('checks_',''));
+  }
+
+  const pcts = allKeys.map(k => calcProgress(k)).filter(p => p > 0);
+  const days = allKeys.filter(k => calcProgress(k) > 0).length;
+  const avg = days > 0 ? Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length) : 0;
+  const best = pcts.length > 0 ? Math.max(...pcts) : 0;
+  const perfect = pcts.filter(p => p === 100).length;
+
+  let totalTasks = 0;
+  allKeys.forEach(k => {
+    const c = getChecks(k);
+    Object.values(c).forEach(arr => arr.forEach(v => { if(v) totalTasks++; }));
+  });
+
+  let streak = 0;
+  let d = new Date(today);
+  while(true) {
+    const k = dateKey(d);
+    const p = calcProgress(k);
+    if (p >= 50) { streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+
+  // Animated counters
+  animateCount('statStreak', streak);
+  animateCount('statDays', days);
+  document.getElementById('statAvg').textContent = avg + '%';
+  document.getElementById('statBest').textContent = best + '%';
+  animateCount('statTasks', totalTasks);
+  animateCount('statPerfect', perfect);
+
+  // Heatmap
+  const hm = document.getElementById('heatmapGrid');
+  hm.innerHTML = '';
+  for (let i = 89; i >= 0; i--) {
+    const dt = new Date(today);
+    dt.setDate(dt.getDate() - i);
+    const k = dateKey(dt);
+    const pct = calcProgress(k);
+    const level = pct === 0 ? 0 : pct < 25 ? 1 : pct < 50 ? 2 : pct < 75 ? 3 : 4;
+    const el = document.createElement('div');
+    el.className = 'hm-cell';
+    el.dataset.pct = pct;
+    el.dataset.level = level;
+    el.title = `${k}: ${pct}%`;
+    hm.appendChild(el);
+  }
+}
+
+function animateCount(id, target) {
+  const el = document.getElementById(id);
+  let start = 0;
+  const duration = 600;
+  const startTime = performance.now();
+  function update(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(start + (target - start) * eased);
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+// ==================== JOURNAL ====================
+function renderJournal() {
+  const d = parseDate(currentJournalDate);
+  document.getElementById('journalDateDisplay').textContent = formatDateTH(d);
+  const j = getJournal(currentJournalDate);
+  document.getElementById('journalGoals').value = j.goals || '';
+  document.getElementById('journalGratitude').value = j.gratitude || '';
+  document.getElementById('journalLearned').value = j.learned || '';
+  document.getElementById('journalReflection').value = j.reflection || '';
+  document.getElementById('journalSavedBadge').classList.remove('show');
+  updateCharCounts();
+}
+
+function updateCharCounts() {
+  const fields = ['Goals','Gratitude','Learned','Reflection'];
+  fields.forEach(f => {
+    const ta = document.getElementById('journal' + f);
+    const cc = document.getElementById('cc' + f);
+    if (ta && cc) cc.textContent = ta.value.length + ' ตัวอักษร';
+  });
+}
+
+// Char count on input
+['journalGoals','journalGratitude','journalLearned','journalReflection'].forEach(id => {
+  setTimeout(() => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateCharCounts);
+  }, 100);
+});
+
+function saveJournal() {
+  setJournal(currentJournalDate, {
+    goals: document.getElementById('journalGoals').value,
+    gratitude: document.getElementById('journalGratitude').value,
+    learned: document.getElementById('journalLearned').value,
+    reflection: document.getElementById('journalReflection').value,
+  });
+  const badge = document.getElementById('journalSavedBadge');
+  badge.classList.add('show');
+  setTimeout(() => badge.classList.remove('show'), 2500);
+  showToast('💾 บันทึกสำเร็จ');
+}
+
+function journalNav(dir) {
+  const d = parseDate(currentJournalDate);
+  d.setDate(d.getDate() + dir);
+  currentJournalDate = dateKey(d);
+  renderJournal();
+}
+
+// ==================== UTILS ====================
+function formatDateTH(d) {
+  const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.',
+    'ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()+543}`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ==================== NAVIGATION ====================
+const viewTitles = {
+  routine: ['⚡', 'Routine วันนี้'],
+  calendar: ['📅', 'ปฏิทิน'],
+  stats: ['📊', 'สถิติ'],
+  journal: ['📝', 'บันทึก'],
+};
+
+function switchView(viewId, clickedEl) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + viewId).classList.add('active');
+
+  const navEl = document.getElementById('nav-' + viewId);
+  if (navEl) navEl.classList.add('active');
+
+  const [icon, title] = viewTitles[viewId];
+  document.getElementById('topbarIcon').textContent = icon;
+  document.getElementById('topbarTitle').textContent = title;
+
+  if (viewId === 'routine') renderRoutine();
+  if (viewId === 'calendar') renderFullCal();
+  if (viewId === 'stats') renderStats();
+  if (viewId === 'journal') renderJournal();
+
+  if (window.innerWidth <= 768) closeSidebar();
+}
+
+// ==================== INIT ====================
+function init() {
+  document.getElementById('topbarDate').textContent = formatDateTH(today);
+  document.getElementById('quoteText').textContent = QUOTES[currentQuoteIdx];
+  renderRoutine();
+  renderMiniCal();
+}
+
+init();
+</script>
+</body>
+</html>
